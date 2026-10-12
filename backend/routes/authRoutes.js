@@ -1,77 +1,4 @@
 
-// import express from "express";
-// import User from "../models/User.js";
-// import bcrypt from "bcryptjs";
-// import jwt from "jsonwebtoken";
-
-// const router = express.Router();
-
-// router.post("/login", async (req, res) => {
-//   try {
-//     const { email, password } = req.body;
-
-//     // 1️⃣ Find the user by email
-//     const user = await User.findOne({ email });
-//     if (!user) {
-//       return res.status(401).json({ msg: "Invalid email or password" });
-//     }
-
-//     let isPasswordValid = false;
-
-//     // 2️⃣ Check password (hashed or old plain text)
-//     if (user.password.startsWith("$2")) {
-//       isPasswordValid = await bcrypt.compare(password, user.password);
-//     } else {
-//       isPasswordValid = password === user.password;
-//       if (isPasswordValid) {
-//         const hashed = await bcrypt.hash(password, 10);
-//         user.password = hashed;
-//         await user.save();
-//       }
-//     }
-
-//     if (!isPasswordValid) {
-//       return res.status(401).json({ msg: "Invalid email or password" });
-//     }
-
-//     // 3️⃣ JWT token (only include user ID)
-//    const token = jwt.sign(
-//   {
-//     id: user._id,
-//     userId: user.userId,
-//      firstName: user.firstName,   // 🔥 ADD THIS
-//     lastName: user.lastName,
-//     departments: Array.isArray(user.departments) ? user.departments : [user.departments],
-//   },
-//   process.env.JWT_SECRET,
-//   { expiresIn: "1d" }
-// );
-
-//     // 4️⃣ Ensure departments is always an array
-//     const departments = Array.isArray(user.departments)
-//       ? user.departments
-//       : [user.departments];
-
-//     // 5️⃣ Send response
-//     res.json({
-//       token,
-//       user: {
-//         id: user._id,
-//         name: user.name || `${user.firstName} ${user.lastName}`,
-//         email: user.email,
-//         userId: user.userId,
-//         departments, // <-- use this for frontend redirects
-//       },
-//     });
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ msg: "Server error" });
-//   }
-// });
-
-// export default router;
-
-
 import express from "express";
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
@@ -178,7 +105,7 @@ router.post(
       res.cookie("token", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: "Strict",
+        sameSite: "none",
         maxAge: 24 * 60 * 60 * 1000,
       });
 
@@ -208,7 +135,7 @@ router.post("/logout", (req, res) => {
     res.clearCookie("token", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "Strict",
+      sameSite: "none",
     });
     //  res.clearCookie("_csrf");
     res.json({ msg: "Logged out successfully" });
