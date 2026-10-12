@@ -497,7 +497,7 @@ router.post(
 
 // ================= LOGIN =================
 router.post(
-  "/auth/login",
+  "/login",
   [
     body("email")
       .trim()
@@ -581,7 +581,7 @@ router.get("/auth/me", verifyToken(), async (req, res) => {
 });
 
 // ================= LOGOUT =================
-router.post("/auth/logout", (req, res) => {
+router.post("/logout", (req, res) => {
   res.clearCookie("token", clearCookieOptions);
 
   return res.status(200).json({
