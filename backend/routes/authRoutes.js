@@ -202,6 +202,54 @@ router.post(
   }
 );
 
+
+router.get("/auth/me", async (req, res) => {
+  try {
+    const token = req.cookies?.token;
+
+    if (!token) {
+      return res.status(401).json({
+        authenticated: false,
+        message: "Please log in.",
+      });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    const user = await User.findById(decoded.id).select("-password");
+
+    if (!user) {
+      return res.status(404).json({
+        authenticated: false,
+        message: "User not found.",
+      });
+    }
+
+    return res.status(200).json({
+      authenticated: true,
+      user: {
+        id: user._id,
+        name: `${user.firstName || ""} ${user.lastName || ""}`.trim(),
+        email: user.email,
+        userId: user.userId,
+        role: user.role,
+        departments: Array.isArray(user.departments)
+          ? user.departments
+          : user.department
+            ? [user.department]
+            : [],
+      },
+    });
+  } catch (error) {
+    console.error("Session verification error:", error.message);
+
+    return res.status(401).json({
+      authenticated: false,
+      message: "Invalid or expired session.",
+    });
+  }
+});
+
 // ================= LOGOUT =================
 router.post("/logout", (req, res) => {
   try {
