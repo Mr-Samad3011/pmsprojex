@@ -294,9 +294,13 @@
 // export default router;
 
 
+
 import jwt from "jsonwebtoken";
 
-export const verifyToken = (allowedDepartments = [], allowedRoles = []) => {
+export const verifyToken = (
+  allowedDepartments = [],
+  allowedRoles = []
+) => {
   return (req, res, next) => {
     try {
       const token =
@@ -307,12 +311,13 @@ export const verifyToken = (allowedDepartments = [], allowedRoles = []) => {
 
       if (!token) {
         return res.status(401).json({
-          message: "Unauthorized: No token provided. Please login.",
+          message: "Unauthorized: Please log in.",
         });
       }
 
       if (!process.env.JWT_SECRET) {
-        console.error("JWT_SECRET is missing from environment variables.");
+        console.error("JWT_SECRET is missing.");
+
         return res.status(500).json({
           message: "Server authentication configuration error.",
         });
@@ -320,32 +325,31 @@ export const verifyToken = (allowedDepartments = [], allowedRoles = []) => {
 
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      // Support either a single department or an array of departments.
-      const departments = Array.isArray(decoded.departments)
+      // Support both old and new token formats.
+      const rawDepartments = Array.isArray(decoded.departments)
         ? decoded.departments
-        : decoded.departments
-          ? [decoded.departments]
-          : decoded.department
-            ? [decoded.department]
-            : [];
+        : decoded.department
+          ? [decoded.department]
+          : [];
 
-      const userDepartments = departments
-        .filter((department) => typeof department === "string")
-        .map((department) => department.toLowerCase());
+      const userDepartments = rawDepartments
+        .filter((item) => typeof item === "string")
+        .map((item) => item.trim().toLowerCase());
 
       const userRole =
         typeof decoded.role === "string"
-          ? decoded.role.toLowerCase()
+          ? decoded.role.trim().toLowerCase()
           : "";
 
-      const allowedDepartmentNames = allowedDepartments.map((department) =>
-        department.toLowerCase()
+      const allowedDepartmentNames = allowedDepartments.map((item) =>
+        item.trim().toLowerCase()
       );
 
-      const allowedRoleNames = allowedRoles.map((role) =>
-        role.toLowerCase()
+      const allowedRoleNames = allowedRoles.map((item) =>
+        item.trim().toLowerCase()
       );
 
+      // Department authorization.
       if (
         allowedDepartmentNames.length > 0 &&
         !userDepartments.some((department) =>
@@ -353,20 +357,27 @@ export const verifyToken = (allowedDepartments = [], allowedRoles = []) => {
         )
       ) {
         return res.status(403).json({
-          message: "Access denied: insufficient department.",
+          message: "Access denied: Insufficient department.",
         });
       }
 
+      // Role authorization.
       if (
         allowedRoleNames.length > 0 &&
         !allowedRoleNames.includes(userRole)
       ) {
         return res.status(403).json({
-          message: "Access denied: insufficient role.",
+          message: "Access denied: Insufficient role.",
         });
       }
 
-      req.user = decoded;
+      req.user = {
+        ...decoded,
+        id: decoded.id || decoded._id,
+        role: decoded.role || null,
+        departments: rawDepartments,
+      };
+
       return next();
     } catch (error) {
       console.error("Authentication error:", error.message);
@@ -383,4 +394,5 @@ export const verifyToken = (allowedDepartments = [], allowedRoles = []) => {
     }
   };
 };
+
 
