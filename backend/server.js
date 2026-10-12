@@ -35,6 +35,7 @@ const allowedOrigins = [
   "http://localhost:5173",
   "https://inexperienced-wilma-protostelic.ngrok-free.dev",
   "https://rsconsullting.com",
+  "https://pmsprojex.vercel.app",
 ];
 
 app.use(
